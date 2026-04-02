@@ -1,18 +1,25 @@
-import { describe, it, expect } from '@jest/globals'
-import * as openaiModule from '../../../lib/openai'
-
-describe('openai library', () => {
-  describe('lookupWord', () => {
-    it('should export lookupWord function', () => {
-      expect(typeof openaiModule.lookupWord).toBe('function')
+describe('AI Lookup Word API', () => {
+  it('should lookup word and return definition', async () => {
+    const response = await fetch('http://localhost:3000/api/ai/lookup-word', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ word: 'apple' }),
     })
 
-    it('should export lookupWordFallback function', () => {
-      expect(typeof openaiModule.lookupWordFallback).toBe('function')
+    expect(response.status).toBe(200)
+    const data = await response.json()
+    expect(data.word).toBe('apple')
+    expect(data.meaningCn).toBeTruthy()
+    expect(data.phoneticUs).toBeTruthy()
+  })
+
+  it('should return 400 if word is missing', async () => {
+    const response = await fetch('http://localhost:3000/api/ai/lookup-word', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
     })
 
-    it('should export openai client', () => {
-      expect(openaiModule.openai).toBeDefined()
-    })
+    expect(response.status).toBe(400)
   })
 })
