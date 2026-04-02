@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 const UpdateLearnerSchema = z.object({
   name: z.string().min(1).optional(),
   avatar: z.string().optional(),
+}).refine(data => Object.values(data).some(v => v !== undefined), {
+  message: 'At least one field must be provided for update',
 })
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -83,7 +86,13 @@ export async function PATCH(
 
     return NextResponse.json({ learner })
   } catch (error) {
-    console.error('Failed to update learner:', error)
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return NextResponse.json(
+        { error: 'Learner not found' },
+        { status: 404 }
+      )
+    }
+    console.error('Failed to update learner:', error, error instanceof Error ? error.message : '')
     return NextResponse.json(
       { error: 'Failed to update learner' },
       { status: 500 }
@@ -92,7 +101,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -103,13 +112,19 @@ export async function DELETE(
       return NextResponse.json({ error: 'Invalid learner ID' }, { status: 400 })
     }
 
-    await db.learner.delete({
+    const learner = await db.learner.delete({
       where: { id: learnerId },
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ learner })
   } catch (error) {
-    console.error('Failed to delete learner:', error)
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return NextResponse.json(
+        { error: 'Learner not found' },
+        { status: 404 }
+      )
+    }
+    console.error('Failed to delete learner:', error, error instanceof Error ? error.message : '')
     return NextResponse.json(
       { error: 'Failed to delete learner' },
       { status: 500 }

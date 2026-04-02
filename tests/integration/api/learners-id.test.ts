@@ -45,6 +45,30 @@ describe('Learners API - Single Learner', () => {
       const data = await response.json()
       expect(data.learner.name).toBe('Updated Name')
     })
+
+    it('should return 404 if learner not found', async () => {
+      const response = await fetch('http://localhost:3000/api/learners/99999', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Updated Name' }),
+      })
+
+      expect(response.status).toBe(404)
+      const data = await response.json()
+      expect(data.error).toBe('Learner not found')
+    })
+
+    it('should return 400 if no fields provided', async () => {
+      const response = await fetch(`http://localhost:3000/api/learners/${testLearnerId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+
+      expect(response.status).toBe(400)
+      const data = await response.json()
+      expect(data.error).toBeDefined()
+    })
   })
 
   describe('DELETE /api/learners/[id]', () => {
@@ -55,8 +79,22 @@ describe('Learners API - Single Learner', () => {
 
       expect(response.status).toBe(200)
 
+      const data = await response.json()
+      expect(data.learner.id).toBe(testLearnerId)
+      expect(data.learner.name).toBe('Test Learner')
+
       const learner = await db.learner.findUnique({ where: { id: testLearnerId } })
       expect(learner).toBeNull()
+    })
+
+    it('should return 404 if learner not found', async () => {
+      const response = await fetch('http://localhost:3000/api/learners/99999', {
+        method: 'DELETE',
+      })
+
+      expect(response.status).toBe(404)
+      const data = await response.json()
+      expect(data.error).toBe('Learner not found')
     })
   })
 
