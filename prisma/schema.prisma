@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Learner {
+  id        Int      @id @default(autoincrement())
+  name      String
+  avatar    String?
+  words     Word[]
+  records   LearningRecord[]
+  schedules ReviewSchedule[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Wordbook {
+  id          Int      @id @default(autoincrement())
+  name        String
+  type        String   // preset | custom
+  category    String?  // ket | pet | 课内 | 课外
+  description String?
+  isBuiltin   Boolean  @default(false)
+  words       Word[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Word {
+  id              Int      @id @default(autoincrement())
+  wordbookId      Int
+  learnerId       Int
+  word            String
+  phoneticUs      String?
+  phoneticUk      String?
+  meaningCn       String?
+  meaningEn       String?
+  examples        String?  // JSON string
+  imageUrl        String?
+  source          String?
+  masteryLevel    Int      @default(0) // 0:不会 1:模糊 2:掌握
+  wordbook        Wordbook @relation(fields: [wordbookId], references: [id], onDelete: Cascade)
+  learner         Learner  @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  records         LearningRecord[]
+  schedules       ReviewSchedule[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([wordbookId])
+  @@index([learnerId])
+  @@index([masteryLevel])
+}
+
+model LearningRecord {
+  id         Int      @id @default(autoincrement())
+  learnerId  Int
+  wordId     Int
+  studyType  String   // card | test
+  testType   String?  // word2meaning | meaning2word | listen | spell
+  isCorrect  Boolean?
+  learner    Learner  @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  word       Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  timestamp  DateTime @default(now())
+
+  @@index([learnerId])
+  @@index([wordId])
+  @@index([timestamp])
+}
+
+model ReviewSchedule {
+  id              Int      @id @default(autoincrement())
+  learnerId       Int
+  wordId          Int
+  nextReviewDate  DateTime
+  reviewCount     Int      @default(0)
+  lastReviewDate  DateTime?
+  learner         Learner  @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  word            Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([learnerId, wordId])
+  @@index([nextReviewDate])
+}

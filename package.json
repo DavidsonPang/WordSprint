@@ -6,14 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "jest"
   },
   "dependencies": {
-    "@prisma/client": "^7.6.0",
+    "@prisma/client": "^6.19.3",
     "date-fns": "^4.1.0",
     "next": "16.2.2",
     "openai": "^6.33.0",
-    "prisma": "^7.6.0",
+    "prisma": "^6.19.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zod": "^4.3.6"
@@ -25,6 +26,7 @@
     "@types/node": "^20.19.37",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
     "jest": "^30.3.0",
