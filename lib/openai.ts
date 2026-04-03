@@ -53,6 +53,39 @@ export async function lookupWord(word: string): Promise<WordLookupResult> {
   }
 }
 
+export async function recognizeWordsFromImage(imageBase64: string) {
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4-vision-preview',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: 'Please identify all English words in this image and return them as a JSON array. Format: ["word1", "word2", "word3"]',
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:image/jpeg;base64,${imageBase64}`,
+              },
+            },
+          ],
+        },
+      ],
+      response_format: { type: 'json_object' },
+      max_tokens: 500,
+    })
+
+    const result = JSON.parse(completion.choices[0].message.content || '{"words":[]}')
+    return result.words || []
+  } catch (error) {
+    console.error('Image recognition failed:', error)
+    throw new Error('Failed to recognize words from image')
+  }
+}
+
 // Fallback to free dictionary API
 export async function lookupWordFallback(word: string): Promise<WordLookupResult> {
   try {
