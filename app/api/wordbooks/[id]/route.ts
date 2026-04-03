@@ -4,9 +4,9 @@ import { z } from 'zod'
 import { Prisma } from '@prisma/client'
 
 const UpdateWordbookSchema = z.object({
-  name: z.string().min(1).optional(),
-  category: z.string().optional(),
-  description: z.string().optional(),
+  name: z.string().min(1, 'Name cannot be empty').optional(),
+  category: z.string().min(1, 'Category cannot be empty').optional(),
+  description: z.string().min(1, 'Description cannot be empty').optional(),
 }).refine(data => Object.values(data).some(v => v !== undefined), {
   message: 'At least one field must be provided for update',
 })
@@ -64,22 +64,6 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid wordbook ID' }, { status: 400 })
     }
 
-    // Check if it's a builtin wordbook
-    const existing = await db.wordbook.findUnique({
-      where: { id: wordbookId },
-    })
-
-    if (!existing) {
-      return NextResponse.json({ error: 'Wordbook not found' }, { status: 404 })
-    }
-
-    if (existing.isBuiltin) {
-      return NextResponse.json(
-        { error: 'Cannot modify builtin wordbooks' },
-        { status: 403 }
-      )
-    }
-
     let body
     try {
       body = await request.json()
@@ -100,9 +84,30 @@ export async function PATCH(
       )
     }
 
-    const wordbook = await db.wordbook.update({
-      where: { id: wordbookId },
+    // Atomically update only non-builtin wordbooks
+    const result = await db.wordbook.updateMany({
+      where: { id: wordbookId, isBuiltin: false },
       data: validation.data,
+    })
+
+    if (result.count === 0) {
+      // Check why: builtin or not found
+      const wordbook = await db.wordbook.findUnique({
+        where: { id: wordbookId },
+      })
+      if (!wordbook) {
+        return NextResponse.json({ error: 'Wordbook not found' }, { status: 404 })
+      }
+      if (wordbook.isBuiltin) {
+        return NextResponse.json(
+          { error: 'Cannot modify builtin wordbooks' },
+          { status: 403 }
+        )
+      }
+    }
+
+    const wordbook = await db.wordbook.findUnique({
+      where: { id: wordbookId },
     })
 
     return NextResponse.json({ wordbook })
@@ -133,25 +138,26 @@ export async function DELETE(
       return NextResponse.json({ error: 'Invalid wordbook ID' }, { status: 400 })
     }
 
-    // Check if it's a builtin wordbook
-    const existing = await db.wordbook.findUnique({
-      where: { id: wordbookId },
+    // Atomically delete only non-builtin wordbooks
+    const result = await db.wordbook.deleteMany({
+      where: { id: wordbookId, isBuiltin: false },
     })
 
-    if (!existing) {
-      return NextResponse.json({ error: 'Wordbook not found' }, { status: 404 })
+    if (result.count === 0) {
+      // Check why: builtin or not found
+      const wordbook = await db.wordbook.findUnique({
+        where: { id: wordbookId },
+      })
+      if (!wordbook) {
+        return NextResponse.json({ error: 'Wordbook not found' }, { status: 404 })
+      }
+      if (wordbook.isBuiltin) {
+        return NextResponse.json(
+          { error: 'Cannot delete builtin wordbooks' },
+          { status: 403 }
+        )
+      }
     }
-
-    if (existing.isBuiltin) {
-      return NextResponse.json(
-        { error: 'Cannot delete builtin wordbooks' },
-        { status: 403 }
-      )
-    }
-
-    await db.wordbook.delete({
-      where: { id: wordbookId },
-    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -14,6 +14,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const learnerId = searchParams.get('learnerId')
 
+    // Validate learnerId if provided
+    if (learnerId && isNaN(parseInt(learnerId))) {
+      return NextResponse.json(
+        { error: 'Invalid learnerId. Must be a valid number.' },
+        { status: 400 }
+      )
+    }
+
     const wordbooks = await db.wordbook.findMany({
       orderBy: [
         { isBuiltin: 'desc' }, // Preset wordbooks first
