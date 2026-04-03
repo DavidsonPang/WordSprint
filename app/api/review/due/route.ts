@@ -14,18 +14,37 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const learnerIdNum = parseInt(learnerId)
+    if (isNaN(learnerIdNum)) {
+      return NextResponse.json(
+        { error: 'Invalid learnerId' },
+        { status: 400 }
+      )
+    }
+
+    let wordbookIdNum: number | undefined
+    if (wordbookId) {
+      wordbookIdNum = parseInt(wordbookId)
+      if (isNaN(wordbookIdNum)) {
+        return NextResponse.json(
+          { error: 'Invalid wordbookId' },
+          { status: 400 }
+        )
+      }
+    }
+
     const now = new Date()
 
     // 查询今天需要复习的单词
     const schedules = await db.reviewSchedule.findMany({
       where: {
-        learnerId: parseInt(learnerId),
+        learnerId: learnerIdNum,
         nextReviewDate: {
           lte: now,
         },
-        ...(wordbookId && {
+        ...(wordbookIdNum && {
           word: {
-            wordbookId: parseInt(wordbookId),
+            wordbookId: wordbookIdNum,
           },
         }),
       },
@@ -53,7 +72,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ words })
   } catch (error) {
-    console.error('Failed to fetch due words:', error)
+    console.error('Failed to fetch due words:', error instanceof Error ? error.message : error)
     return NextResponse.json(
       { error: 'Failed to fetch due words' },
       { status: 500 }

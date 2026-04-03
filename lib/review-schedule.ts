@@ -1,8 +1,13 @@
 import { addDays } from 'date-fns'
+import { PrismaClient } from '@prisma/client'
 
 /**
  * 艾宾浩斯遗忘曲线复习间隔
  * masteryLevel: 0=不会, 1=模糊, 2=掌握
+ *
+ * @param reviewCount - 当前复习次数
+ * @param masteryLevel - 掌握程度 (0=不会, 1=模糊, 2=掌握)
+ * @returns 下次复习的天数间隔
  */
 export function getReviewInterval(reviewCount: number, masteryLevel: number): number {
   if (masteryLevel === 0) {
@@ -23,6 +28,11 @@ export function getReviewInterval(reviewCount: number, masteryLevel: number): nu
 
 /**
  * 计算下次复习日期
+ *
+ * @param currentDate - 当前日期
+ * @param reviewCount - 当前复习次数
+ * @param masteryLevel - 掌握程度 (0=不会, 1=模糊, 2=掌握)
+ * @returns 下次复习的日期
  */
 export function calculateNextReviewDate(
   currentDate: Date,
@@ -35,9 +45,15 @@ export function calculateNextReviewDate(
 
 /**
  * 更新单词的复习计划
+ *
+ * @param db - Prisma数据库客户端
+ * @param learnerId - 学习者ID
+ * @param wordId - 单词ID
+ * @param masteryLevel - 掌握程度 (0=不会, 1=模糊, 2=掌握)
+ * @returns 下次复习日期
  */
 export async function updateReviewSchedule(
-  db: any,
+  db: PrismaClient,
   learnerId: number,
   wordId: number,
   masteryLevel: number

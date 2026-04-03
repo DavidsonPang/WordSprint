@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: validation.error.errors[0].message },
+        { error: 'Validation failed', details: validation.error.errors },
         { status: 400 }
       )
     }
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ nextReviewDate })
   } catch (error) {
-    console.error('Failed to update review schedule:', error)
+    console.error('Failed to update review schedule:', error instanceof Error ? error.message : error)
     return NextResponse.json(
       { error: 'Failed to update review schedule' },
       { status: 500 }

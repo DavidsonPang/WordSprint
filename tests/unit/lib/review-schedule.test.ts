@@ -2,6 +2,7 @@ import { calculateNextReviewDate, getReviewInterval } from '@/lib/review-schedul
 import { addDays, format } from 'date-fns'
 
 describe('Review Schedule Algorithm', () => {
+  // Using a fixed date for consistent test results
   const baseDate = new Date('2026-04-02')
 
   describe('getReviewInterval', () => {
@@ -27,6 +28,17 @@ describe('Review Schedule Algorithm', () => {
       expect(getReviewInterval(1, 1)).toBe(2)
       expect(getReviewInterval(2, 1)).toBe(3)
       expect(getReviewInterval(3, 1)).toBe(5)
+    })
+
+    it('should cap at maximum interval when reviewCount exceeds array length', () => {
+      // For mastery=2, max interval is 30 days (index 5)
+      expect(getReviewInterval(5, 2)).toBe(30)
+      expect(getReviewInterval(10, 2)).toBe(30) // Should still return 30
+      expect(getReviewInterval(100, 2)).toBe(30) // Should still return 30
+
+      // For mastery=1, max interval is 10 days (index 4)
+      expect(getReviewInterval(4, 1)).toBe(10)
+      expect(getReviewInterval(10, 1)).toBe(10) // Should still return 10
     })
   })
 
