@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 interface Learner {
   id: number
@@ -18,11 +18,7 @@ export default function LearnerSelector({ selectedLearnerId, onLearnerChange }: 
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchLearners()
-  }, [])
-
-  const fetchLearners = async () => {
+  const fetchLearners = useCallback(async () => {
     try {
       setIsLoading(true)
       const response = await fetch('/api/learners')
@@ -41,7 +37,11 @@ export default function LearnerSelector({ selectedLearnerId, onLearnerChange }: 
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [selectedLearnerId, onLearnerChange])
+
+  useEffect(() => {
+    fetchLearners()
+  }, [fetchLearners])
 
   const handleAddNewLearner = async () => {
     const name = prompt('Enter learner name:')

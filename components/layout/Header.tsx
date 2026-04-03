@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import LearnerSelector from '@/components/learner/LearnerSelector'
 
 interface Wordbook {
@@ -25,11 +25,7 @@ export default function Header({
   const [wordbooks, setWordbooks] = useState<Wordbook[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    fetchWordbooks()
-  }, [selectedLearnerId])
-
-  const fetchWordbooks = async () => {
+  const fetchWordbooks = useCallback(async () => {
     try {
       setIsLoading(true)
       const url = selectedLearnerId
@@ -49,7 +45,11 @@ export default function Header({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [selectedLearnerId, selectedWordbookId, onWordbookChange])
+
+  useEffect(() => {
+    fetchWordbooks()
+  }, [fetchWordbooks])
 
   return (
     <header className="bg-[#4CAF50] text-white shadow-md">
