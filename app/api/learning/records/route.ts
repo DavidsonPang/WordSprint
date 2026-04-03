@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 
 const CreateRecordSchema = z.object({
@@ -10,7 +11,13 @@ const CreateRecordSchema = z.object({
     errorMap: () => ({ message: 'testType must be word2meaning, meaning2word, listen, or spell' })
   }).optional(),
   isCorrect: z.boolean().optional(),
-})
+}).refine(
+  (data) => data.studyType !== 'test' || data.testType !== undefined,
+  {
+    message: 'testType is required when studyType is "test"',
+    path: ['testType'],
+  }
+)
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,6 +42,17 @@ export async function POST(request: NextRequest) {
     }
 
     const { learnerId, wordId, studyType, testType, isCorrect } = validation.data
+
+    // Validate foreign keys
+    const learner = await db.learner.findUnique({ where: { id: learnerId } })
+    if (!learner) {
+      return NextResponse.json({ error: 'Learner not found' }, { status: 404 })
+    }
+
+    const word = await db.word.findUnique({ where: { id: wordId } })
+    if (!word) {
+      return NextResponse.json({ error: 'Word not found' }, { status: 404 })
+    }
 
     const record = await db.learningRecord.create({
       data: {
@@ -90,7 +108,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where clause
-    const where: any = {
+    const where: Prisma.LearningRecordWhereInput = {
       learnerId: learnerIdNum,
     }
 

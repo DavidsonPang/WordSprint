@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 import { subDays } from 'date-fns'
 
 export async function GET(request: NextRequest) {
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where clause for date filtering
-    const where: any = {
+    const where: Prisma.LearningRecordWhereInput = {
       learnerId: learnerIdNum,
     }
 
