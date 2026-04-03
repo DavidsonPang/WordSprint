@@ -86,6 +86,24 @@ export async function recognizeWordsFromImage(imageBase64: string) {
   }
 }
 
+export async function transcribeAudio(audioBuffer: Buffer) {
+  try {
+    // Create a File object from buffer
+    const file = new File([audioBuffer], 'audio.wav', { type: 'audio/wav' })
+
+    const transcription = await openai.audio.transcriptions.create({
+      file: file,
+      model: 'whisper-1',
+      language: 'en',
+    })
+
+    return transcription.text
+  } catch (error) {
+    console.error('Speech recognition failed:', error)
+    throw new Error('Failed to transcribe audio')
+  }
+}
+
 // Fallback to free dictionary API
 export async function lookupWordFallback(word: string): Promise<WordLookupResult> {
   try {
