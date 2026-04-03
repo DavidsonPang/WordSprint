@@ -8,7 +8,17 @@ export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'dummy-key',
 })
 
-export async function lookupWord(word: string) {
+interface WordLookupResult {
+  word: string
+  phoneticUs?: string
+  phoneticUk?: string
+  meaningCn?: string
+  meaningEn?: string
+  examples?: Array<{ en: string; cn: string }>
+  imageUrl?: string | null
+}
+
+export async function lookupWord(word: string): Promise<WordLookupResult> {
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
@@ -37,41 +47,48 @@ export async function lookupWord(word: string) {
     const result = JSON.parse(completion.choices[0].message.content || '{}')
     return result
   } catch (error) {
-    console.error('OpenAI lookup failed:', error)
-    throw new Error('Failed to lookup word')
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error('OpenAI lookup failed:', errorMessage)
+    throw new Error(`Failed to lookup word "${word}": ${errorMessage}`)
   }
 }
 
 // Fallback to free dictionary API
-export async function lookupWordFallback(word: string) {
+export async function lookupWordFallback(word: string): Promise<WordLookupResult> {
   try {
     const response = await fetch(
       `https://api.dictionaryapi.dev/api/v2/entries/en/${word}`
     )
 
     if (!response.ok) {
-      throw new Error('Dictionary API failed')
+      throw new Error(`Dictionary API returned status ${response.status}`)
     }
 
     const data = await response.json()
     const entry = data[0]
 
+    if (!entry) {
+      throw new Error('No dictionary entry found for word')
+    }
+
+    // Defensive checks for array access
+    const phoneticUs = entry.phonetics && entry.phonetics[0] ? entry.phonetics[0].text : ''
+    const phoneticUk = entry.phonetics && entry.phonetics[1] ? entry.phonetics[1].text : ''
+    const meaningEn = entry.meanings && entry.meanings[0] && entry.meanings[0].definitions && entry.meanings[0].definitions[0] ? entry.meanings[0].definitions[0].definition : ''
+    const example = entry.meanings && entry.meanings[0] && entry.meanings[0].definitions && entry.meanings[0].definitions[0] ? entry.meanings[0].definitions[0].example : ''
+
     return {
       word,
-      phoneticUs: entry.phonetics[0]?.text || '',
-      phoneticUk: entry.phonetics[1]?.text || '',
+      phoneticUs,
+      phoneticUk,
       meaningCn: '',
-      meaningEn: entry.meanings[0]?.definitions[0]?.definition || '',
-      examples: [
-        {
-          en: entry.meanings[0]?.definitions[0]?.example || '',
-          cn: '',
-        },
-      ],
+      meaningEn,
+      examples: example ? [{ en: example, cn: '' }] : [],
       imageUrl: null,
     }
   } catch (error) {
-    console.error('Fallback lookup failed:', error)
-    throw new Error('Failed to lookup word')
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error('Fallback lookup failed:', errorMessage)
+    throw new Error(`Failed to lookup word "${word}" using fallback API: ${errorMessage}`)
   }
 }
