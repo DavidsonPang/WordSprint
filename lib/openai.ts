@@ -56,14 +56,11 @@ export async function lookupWordFallback(word: string) {
     const data = await response.json()
     const entry = data[0]
 
-    const phoneticUs = entry.phonetics[0]?.text || ''
-    const phoneticUk = entry.phonetics[1]?.text || ''
-
     return {
       word,
-      phoneticUs,
-      phoneticUk,
-      meaningCn: '', // Need translation
+      phoneticUs: entry.phonetics[0]?.text || '',
+      phoneticUk: entry.phonetics[1]?.text || '',
+      meaningCn: '',
       meaningEn: entry.meanings[0]?.definitions[0]?.definition || '',
       examples: [
         {
